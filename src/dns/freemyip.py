@@ -1,40 +1,32 @@
 #! /usr/bin/env python3
+from socket           import gethostbyname, gaierror
+from urllib.error     import URLError
+from urllib.request   import urlopen
+from time             import sleep
 
-from socket         import gethostbyname, gaierror
-from urllib.error   import URLError
-from urllib.request import urlopen
-from time           import sleep
+from config.constants import CONFIG
+from config.storage   import config
+from network.netlink  import netlink, ipv4, textip
+from utils.output     import printf
 
-try:
-    from ..config.constants import CONFIG
-    from ..config.storage import config, parse_entry
-    from ..network.netlink import netlink, ipv4, textip
-    from ..utils.output import printf
-except ImportError:
-    from config.constants import CONFIG
-    from config.storage import config, parse_entry
-    from network.netlink import netlink, ipv4, textip
-    from utils.output import printf
+from sys              import argv
 
-from sys import argv
+# --- Library ---
+
+# Deprecated code
+#def update(token, domain, ip, verbose = False, timeout = 5):
+#	try:
+#		ip      = textip(ip)
+#		verbose = '&verbose=yes' if verbose else ''
+#		url     = f'http://freemyip.com/update?token={token}&domain={domain}.freemyip.com&myip={ip}{verbose}'
+#
+#		with urlopen(url, timeout = timeout) as response:
+#			return response.read().strip()
+#
+#	except (URLError, TimeoutError) as e:
+#		return "FAIL"
 
 def update(token, domain, ip, verbose = False, timeout = 5):
-	try:
-		ip      = textip(ip)
-		verbose = '&verbose=yes' if verbose else ''
-		url     = f'http://freemyip.com/update?token={token}&domain={domain}.freemyip.com&myip={ip}{verbose}'
-
-		with urlopen(url, timeout = timeout) as response:
-			return response.read().strip()
-
-	except (URLError, TimeoutError) as e:
-		return "FAIL"
-
-def update_new(token, domain, ip, verbose = False, timeout = 5):
-	"""\
-Deprecated comment:
-	"""
-
 	ip     = textip(ip)
 	domain = domain.decode()
 	url    = f"http://freemyip.com/update?token={token}&domain={domain}.freemyip.com&myip={ip}&verbose=yes"
@@ -69,6 +61,8 @@ Deprecated comment:
 
 	return b"FAIL"
 
+# --- App ---
+
 def updateAll():
 	with netlink() as sock:
 		for host, id, ifname in config():
@@ -78,7 +72,7 @@ def updateAll():
 
 def configAll(*entries):
 	for entry in entries:
-		token, domain, ifname = parse_entry(entry)
+		token, domain, ifname = entry.split(",")
 		config(token, domain, ifname)
 
 def unknown(*_):
