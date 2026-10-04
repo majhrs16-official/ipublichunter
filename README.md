@@ -84,8 +84,7 @@ ipublichunter update
 
 - Linux kernel with netlink support
 - Python 3.8+
-- Root privileges (for netlink socket access)
-- Android environment with `rish` (for airplane mode functionality)
+- Android environment with Shizuku + `rish` (for netlink socket access and airplane mode functionality)
 
 ## Configuration
 
