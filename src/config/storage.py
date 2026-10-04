@@ -31,3 +31,10 @@ def read_entries(fd: int = 0) -> list[tuple[str, str, str]]:
 def parse_entry(entry: str) -> tuple[str, str, str]:
     token, domain, ifname = entry.split(",")
     return token, domain, ifname
+
+
+def config(token: str | None = None, domain: str | None = None, ifname: str | None = None, read_fd: int = 0, write_fd: int = 1) -> list[tuple[str, str, str]] | None:
+    if token and domain and ifname:
+        write_entry(token, domain, ifname, write_fd)
+        return None
+    return read_entries(read_fd)

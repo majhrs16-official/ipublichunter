@@ -7,22 +7,16 @@ from time           import sleep
 
 try:
     from ..config.constants import CONFIG
-    from ..config.storage import write_entry, read_entries, parse_entry
+    from ..config.storage import config, parse_entry
     from ..network.netlink import netlink, ipv4, textip
     from ..utils.output import printf
 except ImportError:
     from config.constants import CONFIG
-    from config.storage import write_entry, read_entries, parse_entry
+    from config.storage import config, parse_entry
     from network.netlink import netlink, ipv4, textip
     from utils.output import printf
 
 from sys import argv
-
-def config(token: str | None = None, domain: str | None = None, ifname: str | None = None):
-	if token and domain and ifname:
-		write_entry(token, domain, ifname)
-	else:
-		return read_entries()
 
 def update(token, domain, ip, verbose = False, timeout = 5):
 	try:
