@@ -7,33 +7,22 @@ from time           import sleep
 
 try:
     from ..config.constants import CONFIG
+    from ..config.storage import write_entry, read_entries, parse_entry
     from ..network.netlink import netlink, ipv4, textip
     from ..utils.output import printf
 except ImportError:
     from config.constants import CONFIG
+    from config.storage import write_entry, read_entries, parse_entry
     from network.netlink import netlink, ipv4, textip
     from utils.output import printf
 
-from os             import pread, write, fstat
-from sys            import argv
+from sys import argv
 
-def _read(offset):
-	return pread(0, 16, offset).lstrip(b'\x00')
-
-def config(token = None, domain = None, ifname = None):
+def config(token: str | None = None, domain: str | None = None, ifname: str | None = None):
 	if token and domain and ifname:
-		write(1, bytes.fromhex(token).rjust(16, b'\x00'))
-		write(1, domain.encode().rjust(16, b'\x00'))
-		write(1, ifname.encode().rjust(16, b'\x00'))
-
+		write_entry(token, domain, ifname)
 	else:
-		list = []
-		for offset in range(0, fstat(0).st_size, 48):
-			token  = _read(offset + 0).hex()
-			domain = _read(offset + 16)
-			ifname = _read(offset + 32)
-			list.append((domain, token, ifname))
-		return list
+		return read_entries()
 
 def update(token, domain, ip, verbose = False, timeout = 5):
 	try:
@@ -95,7 +84,7 @@ def updateAll():
 
 def configAll(*entries):
 	for entry in entries:
-		token, domain, ifname = entry.split(",")
+		token, domain, ifname = parse_entry(entry)
 		config(token, domain, ifname)
 
 def unknown(*_):

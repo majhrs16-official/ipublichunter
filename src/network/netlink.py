@@ -5,10 +5,10 @@ from os             import write
 
 try:
     from ..config.constants import *
-    from ..exceptions import RuntimeException
+    from ..exceptions.RuntimeException import RuntimeException
 except ImportError:
     from config.constants import *
-    from exceptions import RuntimeException
+    from exceptions.RuntimeException import RuntimeException
 from sys            import argv
 
 # --- Library ---

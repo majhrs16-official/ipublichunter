@@ -38,7 +38,7 @@ dev = [
 ]
 
 [project.scripts]
-ipublichunter = "cli:main"
+ipublichunter = "main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
