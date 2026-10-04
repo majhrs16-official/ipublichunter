@@ -5,9 +5,14 @@ from urllib.error   import URLError
 from urllib.request import urlopen
 from time           import sleep
 
-from ipublichunter.config.constants import CONFIG
-from ipublichunter.network.netlink import netlink, ipv4, textip
-from ipublichunter.utils.output import printf
+try:
+    from ..config.constants import CONFIG
+    from ..network.netlink import netlink, ipv4, textip
+    from ..utils.output import printf
+except ImportError:
+    from config.constants import CONFIG
+    from network.netlink import netlink, ipv4, textip
+    from utils.output import printf
 
 from os             import pread, write, fstat
 from sys            import argv

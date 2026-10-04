@@ -3,10 +3,18 @@ from os             import write
 from sys            import argv
 from time           import sleep
 
-from constant       import CONFIG, FARM
-from freemyip       import configAll, updateAll
-from network        import netlink, ipv4
-from util           import printf
+try:
+    from .config.constants import CONFIG, FARM
+    from .dns.freemyip import configAll, updateAll
+    from .network.netlink import netlink, ipv4
+    from .utils.output import printf
+    from .android.manager import airplane, wait
+except ImportError:
+    from config.constants import CONFIG, FARM
+    from dns.freemyip import configAll, updateAll
+    from network.netlink import netlink, ipv4
+    from utils.output import printf
+    from android.manager import airplane, wait
 
 def find(ifname):
 	configurate = False

@@ -38,11 +38,11 @@ dev = [
 ]
 
 [project.scripts]
-ipublichunter = "ipublichunter.__main__:main"
+ipublichunter = "cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["ipublichunter*"]
+include = ["*"]
 
 [tool.ruff]
 line-length = 100

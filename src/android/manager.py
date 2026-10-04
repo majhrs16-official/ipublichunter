@@ -1,6 +1,11 @@
 from time           import sleep
 from os             import system
 
+try:
+    from ..network.netlink import ipv4
+except ImportError:
+    from network.netlink import ipv4
+
 def wait(sock, ifname, mode, timeout = 50, timing = 0.1):
 	if mode:
 		while timeout > 0 and ipv4(sock, ifname)[0] == 0:

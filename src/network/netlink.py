@@ -3,8 +3,12 @@ from socket         import socket, AF_INET, AF_NETLINK, SOCK_RAW, NETLINK_ROUTE,
 from struct         import pack, unpack_from
 from os             import write
 
-from ipublichunter.config.constants import *
-from ipublichunter.exceptions import RuntimeException
+try:
+    from ..config.constants import *
+    from ..exceptions import RuntimeException
+except ImportError:
+    from config.constants import *
+    from exceptions import RuntimeException
 from sys            import argv
 
 # --- Library ---
