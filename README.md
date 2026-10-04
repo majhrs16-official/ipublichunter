@@ -4,12 +4,12 @@ Automated IP address management and dynamic DNS update tool for Linux systems.
 
 ## Overview
 
-IPublicHunter is a Python-based automation tool that monitors network interfaces and automatically updates dynamic DNS records when IP addresses change. It's designed for systems that need to maintain consistent domain name resolution despite changing public IP addresses.
+ipublichunter is a Python-based automation tool that monitors network interfaces and automatically updates dynamic DNS records when IP addresses change. It's designed for systems that need to maintain consistent domain name resolution despite changing public IP addresses.
 
 ## Architecture
 
 ```
-src/IPublicHunter/
+src/
 ├── main.py                 # Entry point and main orchestration loop
 ├── config/
 │   ├── __init__.py
@@ -71,13 +71,13 @@ Orchestrates the automation workflow:
 pip install -e .
 
 # Run with internet interface name
-IPublicHunter <interface_name>
+ipublichunter <interface_name>
 
 # Configure DNS entries (token,domain,interface)
-IPublicHunter config <token>,<domain>,<interface>
+ipublichunter config <token>,<domain>,<interface>
 
 # Manual update
-IPublicHunter update
+ipublichunter update
 ```
 
 ## Requirements
