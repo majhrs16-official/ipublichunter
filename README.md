@@ -9,19 +9,27 @@ ipublichunter is a Python-based automation tool that monitors network interfaces
 ## Architecture
 
 ```
-src/ipublichunter/
-├── __main__.py          # Entry point and main orchestration loop
+src/
+├── main.py                 # Entry point and main orchestration loop
 ├── config/
-│   └── constants.py     # Netlink protocol constants and output formats
+│   ├── __init__.py
+│   ├── constants.py        # Netlink protocol constants and output formats
+│   └── storage.py          # Pipe-based configuration I/O
 ├── network/
-│   └── netlink.py       # Low-level netlink socket communication
+│   ├── __init__.py
+│   └── netlink.py          # Low-level netlink socket communication
 ├── dns/
-│   └── freemyip.py      # FreeMyIP.com DNS update client
+│   ├── __init__.py
+│   └── freemyip.py         # FreeMyIP.com DNS update client
 ├── android/
-│   └── manager.py       # Android connectivity management (airplane mode)
+│   ├── __init__.py
+│   └── manager.py          # Android connectivity management (airplane mode)
 ├── utils/
-│   └── output.py        # Formatted output utilities
-└── exceptions.py        # Custom exception classes
+│   ├── __init__.py
+│   └── output.py           # Formatted output utilities
+└── exceptions/
+    ├── __init__.py
+    └── RuntimeException.py # Custom exception class
 ```
 
 ## Components
@@ -35,7 +43,7 @@ Communicates directly with the Linux kernel via netlink sockets to:
 ### DNS Client (`dns/freemyip.py`)
 Handles communication with FreeMyIP.com dynamic DNS service:
 - Updates DNS records with current IP address
-- Manages configuration storage (token, domain, interface mappings)
+- Manages configuration storage (token, domain, interface mappings) via `config/storage.py`
 - Supports both standard and verbose update modes
 
 ### Android Manager (`android/manager.py`)
@@ -43,7 +51,13 @@ Provides Android-specific connectivity control:
 - Toggles airplane mode to force IP renewal
 - Waits for interface state transitions with configurable timeouts
 
-### Main Loop (`__main__.py`)
+### Configuration Storage (`config/storage.py`)
+Pipe-based configuration management:
+- Reads/writes entries via stdin/stdout file descriptors
+- 16 bytes per field: token (hex), domain, interface name
+- 48 bytes per entry total
+
+### Main Loop (`main.py`)
 Orchestrates the automation workflow:
 1. Detects when interface IP falls outside expected range (180-189.x.x.x)
 2. Triggers airplane mode cycle to request new IP
@@ -75,7 +89,7 @@ ipublichunter update
 
 ## Configuration
 
-The tool stores DNS configuration in stdin/stdout file descriptors:
+The tool stores DNS configuration via pipe (stdin/stdout):
 - 16 bytes: token (hex encoded)
 - 16 bytes: domain name
 - 16 bytes: interface name
@@ -90,4 +104,4 @@ Two formatted output modes:
 
 ## License
 
-MIT License
+GNU General Public License v3.0
