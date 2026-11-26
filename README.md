@@ -17,6 +17,7 @@ src/
 └── ipublichunter/
     ├── __init__.py
     ├── main.py                # Monitor/update loop and API thread
+    ├── remote.py              # UDP API client
     ├── config/
     │   ├── __init__.py
     │   ├── constants.py       # Netlink/API constants and output formats
@@ -94,7 +95,12 @@ Response:
 | magic | 1 | `0x12` |
 | request id | 1 | Echo of the request id |
 | status | 1 | `1=success`, `0=error` |
-| payload | 0 or 4 | IPv4 address for `get_ipv4`/`get_gateway`/`next_ipv4` |
+| payload | 0 or 4 | IPv4 for `get_ipv4`/`get_gateway`; best-effort for `next_ipv4` |
+
+`next_ipv4` is a best-effort control command: it enables airplane mode and waits for the
+interface to lose its IPv4 address. The response may contain `0.0.0.0` or may never arrive,
+because the interface changes while the request is being handled. A client timeout is
+expected; `main.py` detects the invalid IP and performs the full recovery cycle.
 
 Security warning: the API has **no authentication**. Keep it bound to loopback and never
 expose port 5002 to untrusted networks. `exit` and `next_ipv4` are privileged operations.
@@ -156,6 +162,9 @@ python -m ipublichunter.dns.freemyip update < config.bin
 python -m ipublichunter.network.netlink ipv4 wlan0
 python -m ipublichunter.network.netlink gate wlan0
 python -m ipublichunter.network.netlink text 1.2.3.4
+
+# Query the UDP API (ipv4, gate, next, exit)
+python -m ipublichunter.remote 127.0.0.1 5002 ipv4
 ```
 
 The configuration file is binary; do not edit it as text. The current token field stores
