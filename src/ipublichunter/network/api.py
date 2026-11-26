@@ -53,9 +53,9 @@ def serve(ifname_internet, host = "127.0.0.1", port = 5002, stop = None):
 						send(sock, addr, id, 1, gate(nl, ifname_internet))
 
 				elif command == 3:
-					airplane(False) # Main.py detects the invalid IP and farm next IP.
+					airplane(True) # Main.py detects the invalid IP and farm next IP.
 					with netlink() as nl:
-						wait(nl, ifname_internet, True)
+						wait(nl, ifname_internet, False)
 						send(sock, addr, id, 1, ipv4(nl, ifname_internet))
 
 			except Exception as exc:
