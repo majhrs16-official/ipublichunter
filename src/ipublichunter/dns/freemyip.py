@@ -40,7 +40,7 @@ def update(token, domain, ip, verbose = False, timeout = 5):
 				result = response.read().strip()
 
 			dns = gethostbyname(f"{domain}.freemyip.com")
-			write(3, f"{dns}\n".encode())
+#			write(3, f"{dns}\n".encode()) # Cause "OSError: [Errno 9] Bad file descriptor" by starts API.serve, LOL.
 
 			if dns != ip:
 				continue
