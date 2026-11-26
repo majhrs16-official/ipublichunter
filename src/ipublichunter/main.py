@@ -6,7 +6,7 @@ from time             import sleep
 
 from ipublichunter.config.constants import CONFIG, FARM
 from ipublichunter.dns.freemyip     import configAll, updateAll
-from ipublichunter.network          import api
+from ipublichunter.network.api      import serve
 from ipublichunter.network.netlink  import netlink, ipv4
 from ipublichunter.utils.output     import printf
 from ipublichunter.android.manager  import airplane, wait
@@ -52,7 +52,7 @@ def main(path, ifname_internet):
 	EXIT = False
 	configurate = True
 
-	Thread(daemon = True, target=api.serve, args=(ifname_internet,), kwargs={"stop": stop}).start()
+	Thread(daemon = True, target=serve, args=(ifname_internet,), kwargs={"stop": stop}).start()
 
 	while not EXIT:
 		if configurate:
