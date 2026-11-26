@@ -68,4 +68,16 @@ def main(path, host, port, command):
 		sock and sock.close()
 
 if __name__ == "__main__":
-	exit(main(*argv))
+	try:
+		exit(main(*argv))
+
+	except KeyboardInterrupt:
+		exit(0)
+
+	except TypeError as e:
+		print(f"{e}")
+		exit(1)
+
+	except Exception as e:
+		print(f"{e.__class__.__name__}: {e}")
+		raise
