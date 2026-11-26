@@ -1,15 +1,12 @@
 #! /usr/bin/env python3
-from socket         import socket, AF_INET, AF_NETLINK, SOCK_RAW, NETLINK_ROUTE, if_nametoindex, inet_ntoa
-from struct         import pack, unpack_from
-from os             import write
+from socket                      import socket, AF_INET, AF_NETLINK, SOCK_RAW, NETLINK_ROUTE, if_nametoindex, inet_ntoa
+from struct                      import pack, unpack_from
+from os                          import write
 
-try:
-    from ..config.constants import *
-    from ..exceptions.RuntimeException import RuntimeException
-except ImportError:
-    from config.constants import *
-    from exceptions.RuntimeException import RuntimeException
-from sys            import argv
+from ipublichunter.config.constants            import *
+from ipublichunter.exceptions.RuntimeException import RuntimeException
+
+from sys                         import argv
 
 # --- Library ---
 
@@ -103,7 +100,7 @@ def gate(netlink, ifname):
 
 		attr_ptr = ppos + 28
 		target   = False
-		ip       = bytes(4)
+		ip       = None
 
 		while attr_ptr < ppos + h_len:
 			r_len, r_type = unpack_from("HH", view, attr_ptr)
@@ -121,24 +118,26 @@ def gate(netlink, ifname):
 
 	return bytes(4)
 
+def byteip(ip):
+	return bytes(int(oct) for oct in ip.split("."))
+
 # --- App ---
 
-def byteip(ip):
-        return bytes(int(oct) for oct in ip.split("."))
-
 def textip(ip):
+	if isinstance(ip, str):
+		return ".".join(str(int(octet)) for octet in ip.split("."))
 	return "%i.%i.%i.%i" % (*ip,)
 
-def unknown(sock, ifname):
+def unknown(sock, value):
 	return b'Unknown command.'
 
-def main(path, function, ifname):
+def main(path, function, value):
 	with netlink() as sock:
 		ip = {
-			"text": lambda _, ip: textip(ip).encode(),
+			"text": lambda _, value: textip(value).encode(),
 			"ipv4": ipv4,
 			"gate": gate
-		}.get(function, unknown)(sock, ifname)
+		}.get(function, unknown)(sock, value)
 		write(1, ip)
 
 	return 0

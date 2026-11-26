@@ -1,106 +1,192 @@
 # IPublicHunter
 
-Automated IP address management and dynamic DNS update tool for Linux systems.
+Automated public IP management and dynamic DNS update tool for Linux/Android systems.
 
 ## Overview
 
-ipublichunter is a Python-based automation tool that monitors network interfaces and automatically updates dynamic DNS records when IP addresses change. It's designed for systems that need to maintain consistent domain name resolution despite changing public IP addresses.
+IPublicHunter monitors a network interface, keeps the public IP inside the expected range
+(180-189.x.x.x in the current configuration), cycles Android airplane mode when the IP is
+outside that range, and updates a FreeMyIP.com dynamic DNS record once a valid IP is
+obtained. It also exposes a small UDP API for querying the current IPv4/gateway and for
+requesting the next IP.
 
 ## Architecture
 
 ```
 src/
-├── main.py                 # Entry point and main orchestration loop
-├── config/
-│   ├── __init__.py
-│   ├── constants.py        # Netlink protocol constants and output formats
-│   └── storage.py          # Pipe-based configuration I/O
-├── network/
-│   ├── __init__.py
-│   └── netlink.py          # Low-level netlink socket communication
-├── dns/
-│   ├── __init__.py
-│   └── freemyip.py         # FreeMyIP.com DNS update client
-├── android/
-│   ├── __init__.py
-│   └── manager.py          # Android connectivity management (airplane mode)
-├── utils/
-│   ├── __init__.py
-│   └── output.py           # Formatted output utilities
-└── exceptions/
+└── ipublichunter/
     ├── __init__.py
-    └── RuntimeException.py # Custom exception class
+    ├── main.py                # Monitor/update loop and API thread
+    ├── config/
+    │   ├── __init__.py
+    │   ├── constants.py       # Netlink/API constants and output formats
+    │   └── storage.py         # Fixed-size configuration records
+    ├── network/
+    │   ├── __init__.py
+    │   ├── netlink.py         # Netlink socket communication
+    │   └── api.py             # UDP API server
+    ├── dns/
+    │   ├── __init__.py
+    │   └── freemyip.py        # FreeMyIP.com DNS update client
+    ├── android/
+    │   ├── __init__.py
+    │   └── manager.py         # Airplane-mode control and wait helpers
+    ├── utils/
+    │   ├── __init__.py
+    │   └── output.py          # Formatted output to stderr
+    └── exceptions/
+        ├── __init__.py
+        └── RuntimeException.py
+```
+
+Imports are absolute from the package root, for example:
+
+```python
+from ipublichunter.network.netlink import ipv4
 ```
 
 ## Components
 
-### Network Layer (`network/netlink.py`)
-Communicates directly with the Linux kernel via netlink sockets to:
-- Query IPv4 addresses assigned to network interfaces
-- Retrieve gateway information
-- Monitor interface state changes
+### Main loop (`main.py`)
 
-### DNS Client (`dns/freemyip.py`)
-Handles communication with FreeMyIP.com dynamic DNS service:
-- Updates DNS records with current IP address
-- Manages configuration storage (token, domain, interface mappings) via `config/storage.py`
-- Supports both standard and verbose update modes
+1. Starts the UDP API in a daemon thread.
+2. Publishes the current IP and updates DNS.
+3. Detects when the interface IP is outside the expected range.
+4. Cycles airplane mode (`airplane(True)` / `airplane(False)`) and waits for the interface
+   to go down and come back up.
+5. Repeats every second while the API has not requested shutdown.
 
-### Android Manager (`android/manager.py`)
-Provides Android-specific connectivity control:
-- Toggles airplane mode to force IP renewal
-- Waits for interface state transitions with configurable timeouts
+The initial DNS update before validation is intentional. The loop updates DNS again after an
+airplane-mode cycle. A valid-to-valid IP change that occurs without such a cycle is a known
+edge case and may not be published immediately.
 
-### Configuration Storage (`config/storage.py`)
-Pipe-based configuration management:
-- Reads/writes entries via stdin/stdout file descriptors
-- 16 bytes per field: token (hex), domain, interface name
-- 48 bytes per entry total
+### Network layer (`network/netlink.py`)
 
-### Main Loop (`main.py`)
-Orchestrates the automation workflow:
-1. Detects when interface IP falls outside expected range (180-189.x.x.x)
-2. Triggers airplane mode cycle to request new IP
-3. Updates DNS records once valid IP is acquired
-4. Continuously monitors with 1-second intervals
+Communicates with the Linux kernel through netlink sockets to:
+
+- Query the IPv4 address assigned to an interface.
+- Query the default gateway.
+- Format an IPv4 value as text.
+
+The `text` subcommand expects an **IP address**, not an interface name:
+
+```bash
+python -m ipublichunter.network.netlink text 1.2.3.4
+```
+
+### UDP API (`network/api.py`)
+
+The API listens on `127.0.0.1:5002` by default and is intended for local control only. It is
+started by `main.py`; `api.py` is a server library, not a standalone CLI.
+
+Request (3 bytes):
+
+| Byte | Field | Description |
+|---:|---|---|
+| 0 | magic | `0x12` |
+| 1 | request id | Client-selected identifier, echoed in the response |
+| 2 | command | `0=exit`, `1=get_ipv4`, `2=get_gateway`, `3=next_ipv4` |
+
+Response:
+
+| Field | Size | Description |
+|---|---:|---|
+| magic | 1 | `0x12` |
+| request id | 1 | Echo of the request id |
+| status | 1 | `1=success`, `0=error` |
+| payload | 0 or 4 | IPv4 address for `get_ipv4`/`get_gateway`/`next_ipv4` |
+
+Security warning: the API has **no authentication**. Keep it bound to loopback and never
+expose port 5002 to untrusted networks. `exit` and `next_ipv4` are privileged operations.
+
+### DNS client (`dns/freemyip.py`)
+
+- Updates `freemyip.com` over HTTPS.
+- Reads token/domain/interface records from `config/storage.py`.
+- Retries up to 10 times and verifies the resolved DNS address before reporting success.
+- The current implementation always requests a verbose response from FreeMyIP.
+
+### Android manager (`android/manager.py`)
+
+- `airplane(True)` enables airplane mode; `airplane(False)` disables it.
+- Uses `rish -c 'cmd connectivity airplane-mode ...'` (Shizuku + rish, no `sudo`).
+- `wait()` polls the interface until it goes down/up or the timeout budget is exhausted.
+
+### Configuration storage (`config/storage.py`)
+
+- Fixed-size records: 16 bytes token, 16 bytes domain, 16 bytes interface (48 bytes total).
+- Multiple records can be concatenated.
+- Reads use `fstat`/`pread`, so stdin must be a **regular file** (for example `< config.bin`).
+  A shell pipe (`producer | ... update`) is not supported by the current code.
+- Fields must not exceed 16 bytes. The current implementation does not truncate and can
+  corrupt following records if a value is longer.
+
+## Installation
+
+```bash
+pip install -e .
+```
+
+There is no separate console-script wrapper; run the package modules directly:
+
+```bash
+python -m ipublichunter.main wlan0
+```
+
+Requirements:
+
+- Linux kernel with netlink support.
+- Python 3.8+.
+- Android environment with Shizuku + `rish` for airplane-mode control.
+- No root required by the current code; `rish` runs the airplane-mode command.
 
 ## Usage
 
 ```bash
-# Install in development mode
-pip install -e .
+# Monitor and update DNS (also starts the UDP API)
+python -m ipublichunter.main wlan0
 
-# Run with internet interface name
-ipublichunter <interface_name>
+# Write configuration records to a regular file
+python -m ipublichunter.dns.freemyip config <token>,<domain>,<interface> > config.bin
 
-# Configure DNS entries (token,domain,interface)
-ipublichunter config <token>,<domain>,<interface>
+# Read configuration from a regular file and update DNS
+python -m ipublichunter.dns.freemyip update < config.bin
 
-# Manual update
-ipublichunter update
+# Query netlink directly
+python -m ipublichunter.network.netlink ipv4 wlan0
+python -m ipublichunter.network.netlink gate wlan0
+python -m ipublichunter.network.netlink text 1.2.3.4
 ```
 
-## Requirements
+The configuration file is binary; do not edit it as text. The current token field stores
+the hex-decoded token and reads it back as hex, so tokens with leading zero bytes may lose
+those bytes. This is a known limitation.
 
-- Linux kernel with netlink support
-- Python 3.8+
-- Android environment with Shizuku + `rish` (for netlink socket access and airplane mode functionality)
+## Output formats
 
-## Configuration
+Two formatted output modes, written to stderr:
 
-The tool stores DNS configuration via pipe (stdin/stdout):
-- 16 bytes: token (hex encoded)
-- 16 bytes: domain name
-- 16 bytes: interface name
+- **CONFIG**: status, interface name and IPv4 address.
+- **FARM**: status, interface, IPv4, and two wait-budget values. The wait values are the
+  remaining timeout budget (50 = transition detected immediately, 0 = timeout), not elapsed
+  seconds.
 
-Multiple entries can be configured sequentially.
+## API example
 
-## Output Formats
+```python
+import socket
 
-Two formatted output modes:
-- **CONFIG**: Standard status display with interface name and IP
-- **FARM**: Extended display including connection timing metrics
+MAGIC = 0x12
+request_id = 1
+command = 1  # get_ipv4
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.settimeout(2)
+sock.sendto(bytes([MAGIC, request_id, command]), ("127.0.0.1", 5002))
+data, _ = sock.recvfrom(16)
+print(data.hex())
+```
 
 ## License
 
-GNU General Public License v3.0
+GNU General Public License v3.0. See `LICENSE`.

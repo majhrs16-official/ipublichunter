@@ -23,3 +23,12 @@ FARM   = b"""\
 \r\t\t\t\t%i\
 \r\t\t\t\t\t%i\
 \n"""
+
+MAGIC    = b"\x12"
+REMOTE   = b"[%s:%i] /%s\n"
+COMMANDS = [
+	b"exit",
+	b"get_ipv4",
+	b"get_gateway",
+	b"next_ipv4"
+]

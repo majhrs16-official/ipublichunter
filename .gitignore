@@ -34,3 +34,9 @@ htmlcov/
 
 # Local config
 *.local
+
+# Generated media / local artifacts
+brag-output/
+# Local audit reports
+docs/INFORME_IMPLEMENTACION_API.md
+docs/AUDITORIA.md

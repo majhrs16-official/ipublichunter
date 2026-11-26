@@ -4,12 +4,13 @@ from urllib.error     import URLError
 from urllib.request   import urlopen
 from time             import sleep
 
-from config.constants import CONFIG
-from config.storage   import config
-from network.netlink  import netlink, ipv4, textip
-from utils.output     import printf
+from ipublichunter.config.constants import CONFIG
+from ipublichunter.config.storage   import config
+from ipublichunter.network.netlink  import netlink, ipv4, textip
+from ipublichunter.utils.output     import printf
 
-from sys              import argv
+from os                             import write
+from sys                            import argv
 
 # --- Library ---
 
@@ -29,7 +30,7 @@ from sys              import argv
 def update(token, domain, ip, verbose = False, timeout = 5):
 	ip     = textip(ip)
 	domain = domain.decode()
-	url    = f"http://freemyip.com/update?token={token}&domain={domain}.freemyip.com&myip={ip}&verbose=yes"
+	url    = f"https://freemyip.com/update?token={token}&domain={domain}.freemyip.com&myip={ip}&verbose=yes"
 
 	for retry in range(10):
 		sleep(1)

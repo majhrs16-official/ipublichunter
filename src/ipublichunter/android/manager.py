@@ -1,10 +1,7 @@
-from time           import sleep
-from os             import system
+from time            import sleep
+from os              import system
 
-try:
-    from ..network.netlink import ipv4
-except ImportError:
-    from network.netlink import ipv4
+from ipublichunter.network.netlink import ipv4
 
 def wait(sock, ifname, mode, timeout = 50, timing = 0.1):
 	if mode:
@@ -21,4 +18,4 @@ def wait(sock, ifname, mode, timeout = 50, timing = 0.1):
 
 def airplane(state):
 	state = ["disable", "enable"][state]
-	system("sudo rish -c 'cmd connectivity airplane-mode %s'" % state)
+	system("rish -c 'cmd connectivity airplane-mode %s'" % state)

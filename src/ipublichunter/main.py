@@ -1,20 +1,21 @@
 #! /usr/bin/env python3
-from os             import write
-from sys            import argv
-from time           import sleep
+from os               import write
+from sys              import argv
+from threading        import Thread
+from time             import sleep
 
-try:
-    from .config.constants import CONFIG, FARM
-    from .dns.freemyip import configAll, updateAll
-    from .network.netlink import netlink, ipv4
-    from .utils.output import printf
-    from .android.manager import airplane, wait
-except ImportError:
-    from config.constants import CONFIG, FARM
-    from dns.freemyip import configAll, updateAll
-    from network.netlink import netlink, ipv4
-    from utils.output import printf
-    from android.manager import airplane, wait
+from ipublichunter.config.constants import CONFIG, FARM
+from ipublichunter.dns.freemyip     import configAll, updateAll
+from ipublichunter.network          import api
+from ipublichunter.network.netlink  import netlink, ipv4
+from ipublichunter.utils.output     import printf
+from ipublichunter.android.manager  import airplane, wait
+
+EXIT = False
+
+def stop():
+	global EXIT
+	EXIT = True
 
 def find(ifname):
 	configurate = False
@@ -47,9 +48,13 @@ def up(ifname_internet):
 	updateAll()
 
 def main(path, ifname_internet):
+	global EXIT
+	EXIT = False
 	configurate = True
 
-	while True:
+	Thread(daemon = True, target=api.serve, args=(ifname_internet,), kwargs={"stop": stop}).start()
+
+	while not EXIT:
 		if configurate:
 			up(ifname_internet)
 		sleep(1)

@@ -8,14 +8,14 @@ version = "1.0.0"
 description = "IP address automation tool for dynamic DNS updates"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
+license = {text = "GPL-3.0-only"}
 authors = [
     {name = "ipublichunter contributors"}
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -37,12 +37,9 @@ dev = [
     "mypy>=1.0",
 ]
 
-[project.scripts]
-ipublichunter = "main:main"
-
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["*"]
+include = ["ipublichunter*"]
 
 [tool.ruff]
 line-length = 100
