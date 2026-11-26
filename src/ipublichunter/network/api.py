@@ -8,7 +8,7 @@ from ipublichunter.network.netlink  import netlink, ipv4, gate
 from ipublichunter.utils.output     import printf
 
 def send(udp, addr, id, status, payload=b""):
-    udp.sendto(MAGIC + bytes([id, status]) + payload, addr)
+    udp.sendto(MAGIC.to_bytes(1) + bytes([id, status]) + payload, addr)
 
 def serve(ifname_internet, host = "127.0.0.1", port = 5002, stop = None):
 	running = True
@@ -28,7 +28,7 @@ def serve(ifname_internet, host = "127.0.0.1", port = 5002, stop = None):
 				id         = data[1]
 				command    = data[2]
 
-				if magic != MAGIC[0]:
+				if magic != MAGIC:
 					send(sock, addr, id, 0)
 					continue
 

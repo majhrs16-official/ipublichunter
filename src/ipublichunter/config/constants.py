@@ -24,7 +24,7 @@ FARM   = b"""\
 \r\t\t\t\t\t%i\
 \n"""
 
-MAGIC    = b"\x12"
+MAGIC    = 0x12
 REMOTE   = b"[%s:%i] /%s\n"
 COMMANDS = [
 	b"exit",
